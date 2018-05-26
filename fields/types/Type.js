@@ -82,18 +82,19 @@ function Field (list, path, options) {
 		};
 	}
 
-	debug('#######################')
-	debug(options)
+	debug('#######################');
+	debug(options);
 
 	// Add the field to the schema
 	this.addToSchema(options._isNested ? options._nestedSchema : this.list.schema);
 
 	// Add pre-save handler to the list if this field watches others
 	if (this.options.watch) {
-	if (options._isNested && this.options.watch) {
-		throw new Error('Nested fields do not support the `watch` option.');
-	} else if (this.options.watch) {
-		this.list.schema.pre('save', this.getPreSaveWatcher());
+		if (options._isNested && this.options.watch) {
+			throw new Error('Nested fields do not support the `watch` option.');
+		} else if (this.options.watch) {
+			this.list.schema.pre('save', this.getPreSaveWatcher());
+		}
 	}
 
 	// Convert notes from markdown to html
