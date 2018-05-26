@@ -52,7 +52,11 @@ function Field (list, path, options) {
 	this.label = options.label || utils.keyToLabel(this.path);
 	this.typeDescription = options.typeDescription || this.typeDescription || this.type;
 
-	this.list.automap(this);
+	// this.list.automap(this);
+
+	if (!options._isNested) {
+		this.list.automap(this);
+	}
 
 	// Warn on required fields that aren't initial
 	if (this.options.required
@@ -78,11 +82,17 @@ function Field (list, path, options) {
 		};
 	}
 
+	debug('#######################')
+	debug(options)
+
 	// Add the field to the schema
-	this.addToSchema(this.list.schema);
+	this.addToSchema(options._isNested ? options._nestedSchema : this.list.schema);
 
 	// Add pre-save handler to the list if this field watches others
 	if (this.options.watch) {
+	if (options._isNested && this.options.watch) {
+		throw new Error('Nested fields do not support the `watch` option.');
+	} else if (this.options.watch) {
 		this.list.schema.pre('save', this.getPreSaveWatcher());
 	}
 
