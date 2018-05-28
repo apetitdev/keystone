@@ -67,13 +67,13 @@ list.prototype.addToSchema = function (schema) {
 		if (field.list.get('noedit') || field.noedit) {
 			options.noedit = true;
 		}
-		if (typeof options.type !== 'function') {
-			throw new Error(
-				'Invalid type for nested schema path `' + path + '` in `'
-				+ field.list.key + '.' + field.path + '`.\n'
-				+ 'Did you misspell the field type?\n'
-			);
-		}
+		// if (typeof options.type !== 'function') {
+		// 	throw new Error(
+		// 		'Invalid type for nested schema path `' + path + '` in `'
+		// 		+ field.list.key + '.' + field.path + '`.\n'
+		// 		+ 'Did you misspell the field type?\n'
+		// 	);
+		// }
 		options.type = validateFieldType(field, path, options.type);
 		// We need to tell the Keystone List that this field type is in use
 		field.list.fieldTypes[options.type.name] = options.type.properName;
