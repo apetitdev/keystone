@@ -134,8 +134,6 @@ module.exports = Field.create({
 
 const classes = StyleSheet.create({
 	container: {
-		marginTop: '2em',
-		paddingLeft: '2em',
-		boxShadow: '-3px 0 0 rgba(0, 0, 0, 0.1)',
+		marginTop: '2em'
 	},
 });
