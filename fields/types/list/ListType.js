@@ -74,6 +74,8 @@ list.prototype.addToSchema = function (schema) {
 		// 		+ 'Did you misspell the field type?\n'
 		// 	);
 		// }
+		debug('###############');
+		debug(field, options.type);
 		options.type = validateFieldType(field, path, options.type);
 		// We need to tell the Keystone List that this field type is in use
 		field.list.fieldTypes[options.type.name] = options.type.properName;
