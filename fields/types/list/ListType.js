@@ -67,15 +67,15 @@ list.prototype.addToSchema = function (schema) {
 		if (field.list.get('noedit') || field.noedit) {
 			options.noedit = true;
 		}
-		// if (typeof options.type !== 'function') {
-		// 	throw new Error(
-		// 		'Invalid type for nested schema path `' + path + '` in `'
-		// 		+ field.list.key + '.' + field.path + '`.\n'
-		// 		+ 'Did you misspell the field type?\n'
-		// 	);
-		// }
-		debug('###############');
-		debug(field, options.type);
+		if (typeof options.type !== 'function') {
+			throw new Error(
+				'Invalid type for nested schema path `' + path + '` in `'
+				+ field.list.key + '.' + field.path + '`.\n'
+				+ 'Did you misspell the field type?\n'
+			);
+		}
+		console.log('###############');
+		console.log(field, options.type);
 		options.type = validateFieldType(field, path, options.type);
 		// We need to tell the Keystone List that this field type is in use
 		field.list.fieldTypes[options.type.name] = options.type.properName;
@@ -103,10 +103,24 @@ list.prototype.addToSchema = function (schema) {
 				+ field.list.key + '.' + field.path + ' is a reserved path'
 			);
 		}
+		// console.log(path, fieldsSpec[path]);
+		// Case multilangual TODO: refactor me. 
+		// There are more clever way to check multilangual options
+		if (path.includes('_ml')){
+			Object.keys(fieldsSpec[path]).forEach(function (key) {
+				addField(fieldsArray, key, fieldsSpec[path], fields)
+			})
+		} else {
+			addField(fieldsArray, path, fieldsSpec, fields)
+		}
+
+	});
+
+	function addField(fieldsArray, path, fieldsSpec, fields) {
 		var newField = createField(path, fieldsSpec[path]);
 		fields[path] = newField;
 		fieldsArray.push(newField);
-	});
+	}
 
 	if (this.options.decorateSchema) {
 		this.options.decorateSchema(itemSchema);
