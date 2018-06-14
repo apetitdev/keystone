@@ -1,4 +1,4 @@
-var ExMatch = require('expression-match'); // Matches objects with expressions
+var _ = require('lodash');
 
 /**
  * Checks if something is an object
@@ -25,6 +25,14 @@ module.exports = function evalDependsOn (dependsOn, values) {
 
 	// Checks if the current field should be displayed, based on the values of
 	// other fields and the dependsOn configuration of this field
-	var Match = new ExMatch(dependsOn, values, false);
-	return Match.match();
+	var conditions = new Array();
+	_.each(dependsOn, function(v, k){
+		if (_.isArray(v)) {
+			conditions.push(_.includes(v, values[k]));
+		} else {
+			conditions.push(values[k] === v);
+		}
+	})
+	return _.every(conditions, function(item) { return item === true });
+
 };

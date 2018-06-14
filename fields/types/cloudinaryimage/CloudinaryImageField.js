@@ -57,6 +57,9 @@ module.exports = Field.create({
 	componentWillUpdate (nextProps) {
 		// Reset the action state when the value changes
 		// TODO: We should add a check for a new item ID in the store
+		// This is to be refactor looks like the field doesn't support nested listed fields yet
+		if (!this.props.value) this.props.value = {};
+		if (!nextProps.value) nextProps.value = {};
 		if (this.props.value.public_id !== nextProps.value.public_id) {
 			this.setState({
 				removeExisting: false,
