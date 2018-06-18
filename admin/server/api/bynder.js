@@ -3,62 +3,84 @@ TODO: Needs Review and Spec
 */
 
 module.exports = {
-	upload: function (req, res) {
-		var bynder = require('@bynder/bynder-js-sdk');
+	getAll: function (req, res) {
+		const Bynder = require('@bynder/bynder-js-sdk').default;
 		var keystone = req.keystone;
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
 
-		if (req.files && req.files.file) {
-
-			bynder.uploader.upload(req.files.file.path, function (result) {
-				var sendResult = function () {
-					if (result.error) {
-						res.send({ error: { message: result.error.message } });
-					} else {
-						res.send({ image: { url: (keystone.get('cloudinary secure') === true) ? result.secure_url : result.url } });
-					}
-				};
-
-				// TinyMCE upload plugin uses the iframe transport technique
-				// so the response type must be text/html
-				res.format({
-					html: sendResult,
-					json: sendResult,
-				});
-			}, options);
-		} else {
-			res.json({ error: { message: 'No image selected' } });
-		}
-	},
-	autocomplete: function (req, res) {
-		var cloudinary = require('cloudinary');
-		var max = req.query.max || 10;
-		var prefix = req.query.prefix || '';
-		var next = req.query.next || null;
-
-		cloudinary.api.resources(function (result) {
-			if (result.error) {
-				res.json({ error: { message: result.error.message } });
-			} else {
-				res.json({
-					next: result.next_cursor,
-					items: result.resources,
-				});
-			}
-		}, {
-			type: 'upload',
-			prefix: prefix,
-			max_results: max,
-			next_cursor: next,
+		bynder.getMediaList({
+			limit: req.query.limit || 10,
+			page: req.query.page || 1
+		})
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((error) => {
+			res.json(error);
 		});
 	},
-	get: function (req, res) {
-		var cloudinary = require('cloudinary');
-		cloudinary.api.resource(req.query.id, function (result) {
-			if (result.error) {
-				res.json({ error: { message: result.error.message } });
-			} else {
-				res.json({ item: result });
-			}
+
+	getOne: function (req, res) {
+		const Bynder = require('@bynder/bynder-js-sdk').default;
+		var keystone = req.keystone;
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
+
+		bynder.getMediaList({
+			ids: req.params.id,
+			limit: 1,
+			page: 1
+		})
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((error) => {
+			res.json(error);
+		});
+	},
+
+	upload: function (req, res) {
+		const Bynder = require('@bynder/bynder-js-sdk').default;
+		var keystone = req.keystone;
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
+
+		console.log(req.files.file);
+
+		bynder.uploadFile(req.files.file)
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((error) => {
+			res.json(error);
 		});
 	},
 };
