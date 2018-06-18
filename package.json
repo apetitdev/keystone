@@ -8,6 +8,7 @@
     "url": "https://github.com/keystonejs/keystone.git"
   },
   "dependencies": {
+    "@bynder/bynder-js-sdk": "^1.0.2",
     "async": "2.5.0",
     "asyncdi": "1.1.0",
     "babel-core": "6.26.0",

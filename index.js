@@ -84,6 +84,21 @@ var Keystone = function () {
 		this.set('cloudinary config', true);
 	}
 
+	if (process.env.BYNDER_CONSUMER_PUBLIC) {
+		// process.env.BYNDER_URL is processed by the cloudinary package when this is set
+		this.set('bynder config', {
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			baseURL: "http://api-url.bynder.io/api/"
+		});
+	}
+
 	// init mongoose
 	this.set('mongoose', require('mongoose'));
 	this.mongoose.Promise = require('es6-promise').Promise;
