@@ -74,6 +74,12 @@ module.exports = function createDynamicRouter (keystone) {
 		router.post('/api/s3/upload', require('../api/s3').upload);
 	}
 
+	if (keystone.get('bynder config')) {
+		router.post('/api/bynder/upload', require('../api/bynder').upload);
+		router.post('/api/bynder/files', require('../api/bynder').getAllMedias);
+		router.post('/api/bynder/files/:id', require('../api/bynder').getOneMedia);
+	}
+
 	// #5: Core Lists API
 	var initList = require('../middleware/initList');
 
