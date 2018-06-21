@@ -8,6 +8,7 @@ var prototypeMethods = require('keystone-storage-namefunctions/prototypeMethods'
 var sanitize = require('sanitize-filename');
 var util = require('util');
 var utils = require('keystone-utils');
+var fs = require('fs');
 
 /*
 var CLOUDINARY_FIELDS = ['public_id', 'version', 'signature', 'format', 'resource_type', 'url', 'width', 'height', 'secure_url'];
@@ -32,6 +33,20 @@ function getEmptyValue () {
 		width: 0,
 		height: 0,
 		secure_url: '',
+	};
+}
+
+function shapeBynderFile (file, brandId) {
+	if (!file || !brandId){
+		throw new Error('file and brandId are both required')
+	}
+	var file_size = fs.readFileSync(file.path).length;
+	var file = fs.createReadStream(file.path);
+	return {
+		data: {brandId: brandId},
+		length: file_size,
+		body: file,
+		filename: file.originalname
 	};
 }
 
@@ -89,7 +104,10 @@ bynderimage.prototype.getFolder = function () {
  */
 bynderimage.prototype.addToSchema = function (schema) {
 
-	const bynder = require('@bynder/bynder-js-sdk').default
+	const Bynder = require('@bynder/bynder-js-sdk').default;
+	var bynderConfig = keystone.get('bynder config config');
+
+	var bynder = new Bynder(bynderConfig)
 
 	var field = this;
 
@@ -221,32 +239,58 @@ bynderimage.prototype.addToSchema = function (schema) {
 			reset(this);
 		},
 		/**
-		 * Deletes the image from Cloudinary and resets the field
+		 * Get the brand
+		 *
+		 * @api public
+		 */
+
+		 brand: function () {
+		 	var promise = new Promise(function (resolve) {
+				bynder.getBrands()
+				.then((data) => {
+					resolve((_.first(data) || {}).id);
+				})
+				.catch((error) => {
+					resolve(error);
+				});
+			});
+			return promise;
+		 },
+
+		/**
+		 * Deletes the image from Bynder and resets the field
 		 *
 		 * @api public
 		 */
 		delete: function () {
 			var _this = this;
-			var promise = new Promise(function (resolve) {
-				cloudinary.uploader.destroy(_this.get(paths.public_id), function (result) {
-					resolve(result);
+		 	var promise = new Promise(function (resolve) {
+				bynder.deleteMetaproperty({id: _this.get(paths.id)})
+				.then((data) => {
+					resolve(data);
+				})
+				.catch((error) => {
+					resolve(error);
 				});
 			});
 			reset(this);
 			return promise;
 		},
 		/**
-		 * Uploads the image to Cloudinary
+		 * Uploads the image to Bynder
 		 *
 		 * @api public
 		 */
-		upload: function (file, options) {
+		upload: function (file) {
 			var promise = new Promise(function (resolve) {
-				cloudinary.uploader.upload(file, function (result) {
-					resolve(result);
-				}, options);
+				bynder.uploadFile(fileObject)
+				.then((data) => {
+					resolve(data);
+				})
+				.catch((error) => {
+					resolve(error);
+				});
 			});
-			return promise;
 		},
 	};
 
