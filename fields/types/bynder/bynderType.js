@@ -36,11 +36,11 @@ function getEmptyValue () {
 }
 
 /**
- * CloudinaryImage FieldType Constructor
+ * bynderimage FieldType Constructor
  * @extends Field
  * @api public
  */
-function cloudinaryimage (list, path, options) {
+function bynderimage (list, path, options) {
 	this._underscoreMethods = ['format'];
 	this._fixedSize = 'full';
 	this._properties = ['select', 'selectPrefix', 'autoCleanup'];
@@ -53,23 +53,23 @@ function cloudinaryimage (list, path, options) {
 	options = assign({}, DEFAULT_OPTIONS, options);
 	options.generateFilename = ensureCallback(options.generateFilename);
 
-	cloudinaryimage.super_.call(this, list, path, options);
+	bynderimage.super_.call(this, list, path, options);
 	// validate cloudinary config
-	if (!keystone.get('cloudinary config')) {
+	if (!keystone.get('bynder config')) {
 		throw new Error(
 			'Invalid Configuration\n\n'
-			+ 'CloudinaryImage fields (' + list.key + '.' + this.path + ') require the "cloudinary config" option to be set.\n\n'
+			+ 'bynderimage fields (' + list.key + '.' + this.path + ') require the "cloudinary config" option to be set.\n\n'
 			+ 'See http://keystonejs.com/docs/configuration/#services-cloudinary for more information.\n'
 		);
 	}
 }
-cloudinaryimage.properName = 'CloudinaryImage';
-util.inherits(cloudinaryimage, FieldType);
+bynderimage.properName = 'bynderimage';
+util.inherits(bynderimage, FieldType);
 
 /**
  * Gets the folder for images in this field
  */
-cloudinaryimage.prototype.getFolder = function () {
+bynderimage.prototype.getFolder = function () {
 	var folder = null;
 	if (keystone.get('cloudinary folders') || this.options.folder) {
 		if (typeof this.options.folder === 'string') {
@@ -87,9 +87,9 @@ cloudinaryimage.prototype.getFolder = function () {
 /**
  * Registers the field on the List's Mongoose Schema.
  */
-cloudinaryimage.prototype.addToSchema = function (schema) {
+bynderimage.prototype.addToSchema = function (schema) {
 
-	var cloudinary = require('cloudinary');
+	const bynder = require('@bynder/bynder-js-sdk').default
 
 	var field = this;
 
@@ -265,21 +265,21 @@ cloudinaryimage.prototype.addToSchema = function (schema) {
 /**
  * Formats the field value
  */
-cloudinaryimage.prototype.format = function (item) {
+bynderimage.prototype.format = function (item) {
 	return item.get(this.paths.url);
 };
 
 /**
  * Gets the field's data from an Item, as used by the React components
  */
-cloudinaryimage.prototype.getData = function (item) {
+bynderimage.prototype.getData = function (item) {
 	var value = item.get(this.path);
 	return typeof value === 'object' ? value : {};
 };
 
-cloudinaryimage.prototype._originalGetOptions = cloudinaryimage.prototype.getOptions;
+bynderimage.prototype._originalGetOptions = bynderimage.prototype.getOptions;
 
-cloudinaryimage.prototype.getOptions = function () {
+bynderimage.prototype.getOptions = function () {
 	this._originalGetOptions();
 	// We are performing the check here, so that if cloudinary secure is added
 	// to keystone after the model is registered, it will still be respected.
@@ -295,7 +295,7 @@ cloudinaryimage.prototype.getOptions = function () {
 /**
  * Detects whether the field has been modified
  */
-cloudinaryimage.prototype.isModified = function (item) {
+bynderimage.prototype.isModified = function (item) {
 	return item.isModified(this.paths.public_id);
 };
 
@@ -315,7 +315,7 @@ function validateInput (value) {
 /**
  * Validates that a value for this field has been provided in a data object
  */
-cloudinaryimage.prototype.validateInput = function (data, callback) {
+bynderimage.prototype.validateInput = function (data, callback) {
 	var value = this.getValueFromData(data);
 	var result = validateInput(value);
 	utils.defer(callback, result);
@@ -324,7 +324,7 @@ cloudinaryimage.prototype.validateInput = function (data, callback) {
 /**
  * Validates that input has been provided
  */
-cloudinaryimage.prototype.validateRequiredInput = function (item, data, callback) {
+bynderimage.prototype.validateRequiredInput = function (item, data, callback) {
 	// TODO: We need to also get the `files` argument, so we can check for
 	// uploaded files. without it, this will return false negatives so we
 	// can't actually validate required input at the moment.
@@ -339,7 +339,7 @@ cloudinaryimage.prototype.validateRequiredInput = function (item, data, callback
  *
  * Deprecated
  */
-cloudinaryimage.prototype.inputIsValid = function () {
+bynderimage.prototype.inputIsValid = function () {
 	return true;
 };
 
@@ -368,7 +368,7 @@ function trimSupportedFileExtensions (publicId) {
  * TODO: It is not possible to remove an existing value and upload a new image
  * in the same action, this should be supported
  */
-cloudinaryimage.prototype.updateItem = function (item, data, files, callback) {
+bynderimage.prototype.updateItem = function (item, data, files, callback) {
 	// Process arguments
 	if (typeof files === 'function') {
 		callback = files;
@@ -469,14 +469,14 @@ cloudinaryimage.prototype.updateItem = function (item, data, files, callback) {
 	Generates a filename with the provided method in a retry loop, used by
 	getFilename below
 */
-cloudinaryimage.prototype.retryFilename = prototypeMethods.retryFilename;
+bynderimage.prototype.retryFilename = prototypeMethods.retryFilename;
 
 /**
 	Gets a filename for uploaded files based on the adapter options
 */
-cloudinaryimage.prototype.getFilename = prototypeMethods.getFilename;
+bynderimage.prototype.getFilename = prototypeMethods.getFilename;
 
-cloudinaryimage.prototype.fileExists = function (filename, callback) {
+bynderimage.prototype.fileExists = function (filename, callback) {
 	var cloudinary = require('cloudinary');
 	cloudinary.api.resource(filename, function (result) {
 		if (result.error && result.error.http_code === 404) {
@@ -501,7 +501,7 @@ cloudinaryimage.prototype.fileExists = function (filename, callback) {
  *
  * @api public
  */
-cloudinaryimage.prototype.getRequestHandler = function (item, req, paths, callback) {
+bynderimage.prototype.getRequestHandler = function (item, req, paths, callback) {
 
 	var cloudinary = require('cloudinary');
 	var field = this;
@@ -592,4 +592,4 @@ cloudinaryimage.prototype.getRequestHandler = function (item, req, paths, callba
 };
 
 /* Export Field Type */
-module.exports = cloudinaryimage;
+module.exports = bynderimage;

@@ -2,63 +2,123 @@
 TODO: Needs Review and Spec
 */
 
+const Bynder = require('@bynder/bynder-js-sdk').default
+const _ = require('lodash');
+
+const fs = require('fs');
+
 module.exports = {
-	upload: function (req, res) {
-		var bynder = require('@bynder/bynder-js-sdk');
-		var keystone = req.keystone;
+	getBrand: function(req, res) {
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
 
-		if (req.files && req.files.file) {
-
-			bynder.uploader.upload(req.files.file.path, function (result) {
-				var sendResult = function () {
-					if (result.error) {
-						res.send({ error: { message: result.error.message } });
-					} else {
-						res.send({ image: { url: (keystone.get('cloudinary secure') === true) ? result.secure_url : result.url } });
-					}
-				};
-
-				// TinyMCE upload plugin uses the iframe transport technique
-				// so the response type must be text/html
-				res.format({
-					html: sendResult,
-					json: sendResult,
-				});
-			}, options);
-		} else {
-			res.json({ error: { message: 'No image selected' } });
-		}
-	},
-	autocomplete: function (req, res) {
-		var cloudinary = require('cloudinary');
-		var max = req.query.max || 10;
-		var prefix = req.query.prefix || '';
-		var next = req.query.next || null;
-
-		cloudinary.api.resources(function (result) {
-			if (result.error) {
-				res.json({ error: { message: result.error.message } });
-			} else {
-				res.json({
-					next: result.next_cursor,
-					items: result.resources,
-				});
-			}
-		}, {
-			type: 'upload',
-			prefix: prefix,
-			max_results: max,
-			next_cursor: next,
+		bynder.getBrands()
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((error) => {
+			res.json(error);
 		});
 	},
-	get: function (req, res) {
-		var cloudinary = require('cloudinary');
-		cloudinary.api.resource(req.query.id, function (result) {
-			if (result.error) {
-				res.json({ error: { message: result.error.message } });
-			} else {
-				res.json({ item: result });
-			}
+
+	getAllMedias: function (req, res) {
+		var keystone = req.keystone;
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
+
+		bynder.getMediaList({
+			limit: req.query.limit || 10,
+			page: req.query.page || 1
+		})
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((error) => {
+			res.json(error);
+		});
+	},
+
+	getOneMedia: function (req, res) {
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
+
+		bynder.getMediaList({
+			ids: req.params.id,
+			limit: 1,
+			page: 1
+		})
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((error) => {
+			res.json(error);
+		});
+	},
+
+	upload: function (req, res) {
+		var bynder = new Bynder({
+			consumer: {
+			    public: process.env.BYNDER_CONSUMER_PUBLIC,
+			    secret: process.env.BYNDER_CONSUMER_SECRET
+			},
+			accessToken: {
+			    public: process.env.BYNDER_ACCESSTOKEN_PUBLIC,
+			    secret: process.env.BYNDER_ACCESSTOKEN_SECRET
+			},
+		    baseURL: "https://plugin.getbynder.com/api/"
+		})
+		var file_size = fs.readFileSync(req.files.file.path).length;
+		var file = fs.createReadStream(req.files.file.path);
+
+		console.log(bynder);
+		bynder.getBrands()
+		.then((data) => {
+			var brand_id = (_.first(data) || {}).id;
+			console.log('we got the brand');
+			fileObject = 
+				{data: {brandId: brand_id},
+				 length: file_size,
+				 body: file,
+				 filename: req.files.file.originalname};
+			bynder.uploadFile(fileObject)
+			.then((data) => {
+				res.json(data);
+			})
+			.catch((error) => {
+				console.log('we fucked up', error);
+				res.json(error);
+			});
+		})
+		.catch((error) => {
+			console.log('we really fucked up', error);
+			res.json(error);
 		});
 	},
 };
