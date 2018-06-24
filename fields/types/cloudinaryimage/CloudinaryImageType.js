@@ -352,7 +352,7 @@ function trimSupportedFileExtensions (publicId) {
 		'.jpg', '.jpe', '.jpeg', '.jpc', '.jp2', '.j2k', '.wdp', '.jxr',
 		'.hdp', '.png', '.gif', '.webp', '.bmp', '.tif', '.tiff', '.ico',
 		'.pdf', '.ps', '.ept', '.eps', '.eps3', '.psd', '.svg', '.ai',
-		'.djvu', '.flif', '.tga',
+		'.djvu', '.flif', '.tga', 'pdf', '.docx', '.doc'
 	];
 	for (var i = 0; i < supportedExtensions.length; i++) {
 		var extension = supportedExtensions[i];
