@@ -97,6 +97,7 @@ module.exports = Field.create({
 	renderItems () {
 		const { value = [], path } = this.props;
 		const onAdd = this.addItem;
+		console.log(value, path, this);
 		return (
 			<div>
 				{value.map((value, index) => {
