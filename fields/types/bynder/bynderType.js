@@ -10,18 +10,6 @@ var util = require('util');
 var utils = require('keystone-utils');
 var fs = require('fs');
 
-/*
-var CLOUDINARY_FIELDS = ['public_id', 'version', 'signature', 'format', 'resource_type', 'url', 'width', 'height', 'secure_url'];
-*/
-
-var DEFAULT_OPTIONS = {
-	// This makes Cloudinary assign a unique public_id and is the same as
-	//   the legacy implementation
-	generateFilename: () => undefined,
-	whenExists: 'overwrite',
-	retryAttempts: 3, // For whenExists: 'retry'.
-};
-
 function getEmptyValue () {
 	return {
 		public_id: '',
@@ -65,16 +53,15 @@ function bynderimage (list, path, options) {
 		options.generateFilename = nameFunctions.originalFilename;
 		options.whenExists = 'overwrite';
 	}
-	options = assign({}, DEFAULT_OPTIONS, options);
+	options = assign({}, options);
 	options.generateFilename = ensureCallback(options.generateFilename);
 
 	bynderimage.super_.call(this, list, path, options);
-	// validate cloudinary config
+	// validate bynder config
 	if (!keystone.get('bynder config')) {
 		throw new Error(
 			'Invalid Configuration\n\n'
-			+ 'bynderimage fields (' + list.key + '.' + this.path + ') require the "cloudinary config" option to be set.\n\n'
-			+ 'See http://keystonejs.com/docs/configuration/#services-cloudinary for more information.\n'
+			+ 'bynderimage fields (' + list.key + '.' + this.path + ') require the "bynder config" option to be set.\n\n'
 		);
 	}
 }
@@ -86,11 +73,11 @@ util.inherits(bynderimage, FieldType);
  */
 bynderimage.prototype.getFolder = function () {
 	var folder = null;
-	if (keystone.get('cloudinary folders') || this.options.folder) {
+	if (keystone.get('bynder folders') || this.options.folder) {
 		if (typeof this.options.folder === 'string') {
 			folder = this.options.folder;
 		} else {
-			var folderList = keystone.get('cloudinary prefix') ? [keystone.get('cloudinary prefix')] : [];
+			var folderList = keystone.get('bynder prefix') ? [keystone.get('bynder prefix')] : [];
 			folderList.push(this.list.path);
 			folderList.push(this.path);
 			folder = folderList.join('/');
@@ -107,12 +94,12 @@ bynderimage.prototype.addToSchema = function (schema) {
 	const Bynder = require('@bynder/bynder-js-sdk').default;
 	var bynderConfig = keystone.get('bynder config config');
 
-	var bynder = new Bynder(bynderConfig)
+	var bynder = new Bynder(bynderConfig);
 
 	var field = this;
 
 	var paths = this.paths = {
-		// cloudinary fields
+		// bynder fields
 		public_id: this.path + '.public_id',
 		version: this.path + '.version',
 		signature: this.path + '.signature',
@@ -152,30 +139,10 @@ bynderimage.prototype.addToSchema = function (schema) {
 		return schemaMethods.exists.apply(this);
 	});
 
-	// The .folder virtual returns the cloudinary folder used to upload/select images
+	// The .folder virtual returns the bynder folder used to upload/select images
 	schema.virtual(paths.folder).get(function () {
 		return schemaMethods.folder.apply(this);
 	});
-
-	var src = function (item, options) {
-		if (!exists(item)) {
-			return '';
-		}
-		options = (typeof options === 'object') ? options : {};
-		if (!('fetch_format' in options) && keystone.get('cloudinary webp') !== false) {
-			options.fetch_format = 'auto';
-		}
-		if (!('progressive' in options) && keystone.get('cloudinary progressive') !== false) {
-			options.progressive = true;
-		}
-		if (!('secure' in options) && keystone.get('cloudinary secure')) {
-			options.secure = true;
-		}
-		options.version = item.get(paths.version);
-		options.format = options.format || item.get(paths.format);
-
-		return cloudinary.url(item.get(paths.public_id), options);
-	};
 
 	var reset = function (item) {
 		item.set(field.path, getEmptyValue());
@@ -201,7 +168,7 @@ bynderimage.prototype.addToSchema = function (schema) {
 			return src(this, options);
 		},
 		tag: function (options) {
-			return exists(this) ? cloudinary.image(this.get(field.path).public_id, options) : '';
+			return exists(this) ? bynder.image(this.get(field.path).public_id, options) : '';
 		},
 		scale: function (width, height, options) {
 			return src(this, addSize({ crop: 'scale' }, width, height, options));
@@ -325,13 +292,13 @@ bynderimage.prototype._originalGetOptions = bynderimage.prototype.getOptions;
 
 bynderimage.prototype.getOptions = function () {
 	this._originalGetOptions();
-	// We are performing the check here, so that if cloudinary secure is added
+	// We are performing the check here, so that if bynder secure is added
 	// to keystone after the model is registered, it will still be respected.
-	// Setting secure overrides default `cloudinary secure`
+	// Setting secure overrides default `bynder secure`
 	if ('secure' in this.options) {
 		this.__options.secure = this.options.secure;
-	} else if (keystone.get('cloudinary secure')) {
-		this.__options.secure = keystone.get('cloudinary secure');
+	} else if (keystone.get('bynder secure')) {
+		this.__options.secure = keystone.get('bynder secure');
 	}
 	return this.__options;
 };
@@ -350,8 +317,6 @@ function validateInput (value) {
 	// If a string is provided, check it is an upload or delete instruction
 	// TODO: This should really validate files as well, but that's not pased to this method
 	if (typeof value === 'string' && /^(upload\:)|(delete$)|(data:[a-z\/]+;base64)|(https?\:\/\/)/.test(value)) return true;
-	// If the value is an object and has a cloudinary public_id, it is valid
-	if (typeof value === 'object' && value.public_id) return true;
 	// None of the above? we can't recognise it.
 	return false;
 }
@@ -388,7 +353,7 @@ bynderimage.prototype.inputIsValid = function () {
 };
 
 /**
- * Trim supported file extensions from the public id because cloudinary uses these at
+ * Trim supported file extensions from the public id because bynder uses these at
  * the end of the a url to dynamically convert the image filetype
  */
 function trimSupportedFileExtensions (publicId) {
@@ -422,7 +387,10 @@ bynderimage.prototype.updateItem = function (item, data, files, callback) {
 		files = {};
 	}
 
-	var cloudinary = require('cloudinary');
+	const Bynder = require('@bynder/bynder-js-sdk').default;
+	var bynderConfig = keystone.get('bynder config config');
+
+	var bynder = new Bynder(bynderConfig);
 	var field = this;
 
 	// Prepare values
@@ -431,13 +399,12 @@ bynderimage.prototype.updateItem = function (item, data, files, callback) {
 
 	// Providing the string "remove" or "delete" removes the file and resets the field
 	if (value === 'remove' || value === 'delete') {
-		cloudinary.uploader.destroy(item.get(field.paths.public_id), function (result) {
-			if (result.error) {
-				callback(result.error);
-			} else {
-				item.set(field.path, getEmptyValue());
-				callback();
-			}
+		bynder.deleteMetaproperty({id: _this.get(field.paths.id)})
+		.then((data) => {
+			item.set(field.path, getEmptyValue());
+		})
+		.catch((error) => {
+			callback(error);
 		});
 		return;
 	}
@@ -460,7 +427,7 @@ bynderimage.prototype.updateItem = function (item, data, files, callback) {
 
 	// If we have a file to upload, we do that and stop here
 	if (uploadedFile) {
-		var tagPrefix = keystone.get('cloudinary prefix') || '';
+		var tagPrefix = keystone.get('bynder prefix') || '';
 		var uploadOptions = {
 			tags: [],
 		};
@@ -478,13 +445,13 @@ bynderimage.prototype.updateItem = function (item, data, files, callback) {
 		}
 		this.getFilename(uploadedFile, function (err, filename) {
 			if (err) return callback(err);
-			// If an undefined filename is returned, Cloudinary will automatically generate a unique
+			// If an undefined filename is returned, bynder will automatically generate a unique
 			//   filename. Therefore undefined is a valid filename value.
 			if (filename !== undefined) {
 				filename = sanitize(filename);
 				uploadOptions.public_id = trimSupportedFileExtensions(filename);
 			}
-			cloudinary.uploader.upload(uploadedFile.path, function (result) {
+			bynder.uploadFile((uploadedFile, function (result) {
 				if (result.error) {
 					return callback(result.error);
 				} else {
@@ -520,34 +487,25 @@ bynderimage.prototype.retryFilename = prototypeMethods.retryFilename;
 */
 bynderimage.prototype.getFilename = prototypeMethods.getFilename;
 
-bynderimage.prototype.fileExists = function (filename, callback) {
-	var cloudinary = require('cloudinary');
-	cloudinary.api.resource(filename, function (result) {
-		if (result.error && result.error.http_code === 404) {
-			// File doesn't exist
-			callback(null, false);
-		} else if (result.error) {
-			// Error
-			callback(result.error, null);
-		} else {
-			// File exists
-			callback(null, true);
-		}
-	});
-};
+// bynderimage.prototype.fileExists = function (filename, callback) {
+// TODO: To be done to check if file exists
+// };
 
 /**
  * Returns a callback that handles a standard form submission for the field
  *
  * Expected form parts are
  * - `field.paths.action` in `req.body` (`clear` or `delete`)
- * - `field.paths.upload` in `req.files` (uploads the image to cloudinary)
+ * - `field.paths.upload` in `req.files` (uploads the image to bynder)
  *
  * @api public
  */
 bynderimage.prototype.getRequestHandler = function (item, req, paths, callback) {
 
-	var cloudinary = require('cloudinary');
+	const Bynder = require('@bynder/bynder-js-sdk').default;
+	var bynderConfig = keystone.get('bynder config config');
+
+	var bynder = new Bynder(bynderConfig);
 	var field = this;
 	if (utils.isFunction(paths)) {
 		callback = paths;
@@ -565,16 +523,9 @@ bynderimage.prototype.getRequestHandler = function (item, req, paths, callback) 
 			}
 		}
 		if (req.body && req.body[paths.select]) {
-			cloudinary.api.resource(req.body[paths.select], function (result) {
-				if (result.error) {
-					callback(result.error);
-				} else {
-					item.set(field.path, result);
-					callback();
-				}
-			});
+			// Retrieve the file amybe with Retrieve asset usage ?
 		} else if (req.files && req.files[paths.upload] && req.files[paths.upload].size) {
-			var tp = keystone.get('cloudinary prefix') || '';
+			var tp = keystone.get('bynder prefix') || '';
 			var imageDelete;
 			if (tp.length) {
 				tp += '_';
@@ -582,11 +533,11 @@ bynderimage.prototype.getRequestHandler = function (item, req, paths, callback) 
 			var uploadOptions = {
 				tags: [tp + field.list.path + '_' + field.path, tp + field.list.path + '_' + field.path + '_' + item.id],
 			};
-			if (keystone.get('cloudinary folders')) {
+			if (keystone.get('bynder folders')) {
 				uploadOptions.folder = item.get(paths.folder);
 			}
-			if (keystone.get('cloudinary prefix')) {
-				uploadOptions.tags.push(keystone.get('cloudinary prefix'));
+			if (keystone.get('bynder prefix')) {
+				uploadOptions.tags.push(keystone.get('bynder prefix'));
 			}
 			if (keystone.get('env') !== 'production') {
 				uploadOptions.tags.push(tp + 'dev');
