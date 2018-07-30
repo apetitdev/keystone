@@ -1,15 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router';
-import { Alert, BlankState, Center, Spinner } from '../../../../elemental';
+import { Alert, BlankState, Center, Spinner, Button, Form, Modal } from '../../../../elemental';
 
 import DragDrop from './RelatedItemsListDragDrop';
 import ListRow from './RelatedItemsListRow';
+import EditForm from '../EditForm';
 
 import { loadRelationshipItemData } from '../../actions';
 import { TABLE_CONTROL_COLUMN_WIDTH } from '../../../../../constants';
 
 const RelatedItemsList = React.createClass({
 	propTypes: {
+		onCancel: React.PropTypes.func,
 		dispatch: React.PropTypes.func.isRequired,
 		dragNewSortOrder: React.PropTypes.number,
 		items: React.PropTypes.array,
@@ -23,6 +25,7 @@ const RelatedItemsList = React.createClass({
 			columns: this.getColumns(),
 			err: null,
 			items: null,
+			isOpen: false
 		};
 	},
 	componentDidMount () {
@@ -45,6 +48,14 @@ const RelatedItemsList = React.createClass({
 		}
 		return false;
 	},
+	openPopup () {
+		this.setState({isOpen: true})
+	},
+	handleClose() {
+		this.setState({isOpen: false});
+		debugger;
+		this.props.onCancel();
+	},
 	getColumns () {
 		const { relationship, refList } = this.props;
 		const columns = refList.expandColumns(refList.defaultColumns);
@@ -64,6 +75,7 @@ const RelatedItemsList = React.createClass({
 		}
 		this.props.dispatch(loadRelationshipItemData({ columns, refList, relatedItemId, relationship }));
 	},
+	// THIS IS WHERE WE HAVE TO LOAD THE EDIT WITH POPUP ON CLICK
 	renderItems () {
 		const tableBody = (this.isSortable()) ? (
 			<DragDrop
@@ -74,12 +86,32 @@ const RelatedItemsList = React.createClass({
 		) : (
 			<tbody>
 				{this.props.items.results.map((item) => {
-					return (<ListRow
+					console.log('Got one item');
+					console.log(item);
+					console.log('Got this crap');
+					console.log(this.props);
+					return ([<ListRow
 						key={item.id}
 						columns={this.state.columns}
 						item={item}
 						refList={this.props.refList}
-					/>);
+					/>, 
+					<Button
+						variant="link"
+						color="success"
+						data-button-type="cancel"
+						onClick={this.openPopup}
+					> Edit
+					</Button>,
+					<Modal.Dialog isOpen={this.state.isOpen} onClose={this.handleClose} backdropClosesModal>
+						Je suis une loutre de compassion.
+						<EditForm
+							list={this.props.currentList}
+							data={this.props.data}
+							dispatch={this.props.dispatch}
+							router={this.context.router}
+							/>
+					</Modal.Dialog>]);
 				})}
 			</tbody>
 		);
@@ -136,5 +168,6 @@ const RelatedItemsList = React.createClass({
 		);
 	},
 });
+
 
 module.exports = RelatedItemsList;
